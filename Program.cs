@@ -22,11 +22,12 @@ namespace ConsoleFpsSharp
 
         static void Main(string[] args)
         {
-            Console.OutputEncoding = System.Text.Encoding.UTF8;
-            Console.SetWindowSize(ScreenWidth, ScreenHeight);
-            Console.SetBufferSize(ScreenWidth, ScreenHeight);
+            // Console.OutputEncoding = System.Text.Encoding.UTF8;
+            // Console.SetWindowSize(ScreenWidth, ScreenHeight);
+            // Console.SetBufferSize(ScreenWidth, ScreenHeight);
             IntPtr ptrStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
-            byte[] textBuffer = new byte[ScreenWidth * ScreenHeight];
+            CharInfo[] textBuffer = new CharInfo[ScreenWidth * ScreenHeight];
+            SmallRect smallRect = new SmallRect() { Left = 0, Top = 0, Right = 120, Bottom = 40 };
             uint bytesWritten = 0;
 
             string map = "";
@@ -35,15 +36,15 @@ namespace ConsoleFpsSharp
             map += "#..............#";
             map += "#..............#";
             map += "#..............#";
-            map += "########.......#";
-            map += "#..............#";
-            map += "#.........#....#";
-            map += "#..............#";
-            map += "#.........#....#";
             map += "#..............#";
             map += "#..............#";
             map += "#..............#";
-            map += "#.......########";
+            map += "#..............#";
+            map += "#..............#";
+            map += "#..............#";
+            map += "#..............#";
+            map += "#..............#";
+            map += "#..............#";
             map += "#..............#";
             map += "#..............#";
             map += "################";
@@ -61,29 +62,29 @@ namespace ConsoleFpsSharp
                 // Controls
                 // Handle CCW Rotation
                 // A
-                if ((GetAsyncKeyState((short)'A') & 1) == 1)
+                if ((GetAsyncKeyState((ushort)'A') & 1) == 1)
                 {
                     playerAngle -= (0.1f);
                     //playerAngle -= (0.03f);
                 }
 
-                if ((GetAsyncKeyState((short)'D') & 1) == 1)
+                if ((GetAsyncKeyState((ushort)'D') & 1) == 1)
                 {
-                    playerAngle += (0.01f);
+                    playerAngle += (0.1f);
                     //playerAngle += (0.03f);
                 }
 
-                if ((GetAsyncKeyState((short)'W') & 1) == 1)
-                {
-                    playerX += (float)Math.Sin(playerAngle) * 0.1f * deltaTime;
-                    playerY += (float)Math.Cos(playerAngle) * 0.1f * deltaTime;
-                }
+                // if ((GetAsyncKeyState((short)'W') & 1) == 1)
+                // {
+                //     playerX += (float)Math.Sin(playerAngle) * 0.1f * deltaTime;
+                //     playerY += (float)Math.Cos(playerAngle) * 0.1f * deltaTime;
+                // }
 
-                if ((GetAsyncKeyState((short)'S') & 1) == 1)
-                {
-                    playerX -= (float)Math.Sin(playerAngle) * 0.1f * deltaTime;
-                    playerY -= (float)Math.Cos(playerAngle) * 0.1f * deltaTime;
-                }
+                // if ((GetAsyncKeyState((short)'S') & 1) == 1)
+                // {
+                //     playerX -= (float)Math.Sin(playerAngle) * 0.1f * deltaTime;
+                //     playerY -= (float)Math.Cos(playerAngle) * 0.1f * deltaTime;
+                // }
 
                 for (int x = 0; x < ScreenWidth; x++)
                 {
@@ -134,33 +135,49 @@ namespace ConsoleFpsSharp
                     {
                         if (y <= ceiling)
                         {
-                            textBuffer[y * ScreenWidth + x] = (byte)' ';
+                            textBuffer[y * ScreenWidth + x].Attributes = 0;
+                            textBuffer[y * ScreenWidth + x].Char.AsciiChar = (byte)' ';
                         }
                         else if (y > ceiling && y <= floor)
                         {
-                            textBuffer[y * ScreenWidth + x] = (byte)shade;
+                            textBuffer[y * ScreenWidth + x].Attributes = 0;
+                            textBuffer[y * ScreenWidth + x].Char.AsciiChar = (byte)shade;
                         }
                         else
                         {
                             // Shade floor based on distance
                             float distance = 1f - ((y - ScreenHeight / 2f) / (ScreenHeight / 2f));
-                            if (distance < 0.25f) { shade = 'X'; }
-                            else if (distance < 0.5f) { shade = '+'; }
-                            else if (distance < 0.75f) { shade = ':'; }
-                            else if (distance < 0.9f) { shade = '.'; }
-                            else { shade = ' '; }
-                            textBuffer[y * ScreenWidth + x] = (byte)shade;
+                            // if (distance < 0.25f) { shade = 'X'; }
+                            // else if (distance < 0.5f) { shade = '+'; }
+                            // else if (distance < 0.75f) { shade = ':'; }
+                            // else if (distance < 0.9f) { shade = '.'; }
+                            // else { shade = ' '; }
+                            textBuffer[y * ScreenWidth + x].Attributes = 0;
+                            textBuffer[y * ScreenWidth + x].Char.AsciiChar = (byte)' '; //(byte)shade;
                         }
                     }
                 }
 
-                textBuffer[ScreenWidth * ScreenHeight - 1] = (byte)'\0';
-                WriteConsoleOutputCharacter(ptrStdOut, textBuffer, ScreenWidth * ScreenHeight, new Coord(0, 0), out bytesWritten);
+                textBuffer[ScreenWidth * ScreenHeight - 1].Char.AsciiChar = (byte)'\0';
+                //WriteConsoleOutputCharacter(ptrStdOut, textBuffer, ScreenWidth * ScreenHeight, new Coord(0, 0), out bytesWritten);
+                WriteConsoleOutput(ptrStdOut, textBuffer, new Coord() {X = 120, Y = 40}, new Coord() {X = 0, Y = 0}, ref smallRect);
             }
         }
 
         [DllImport("kernel32.dll", SetLastError = true)]
         static extern IntPtr GetStdHandle(int nStdHandle);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        static extern bool SetConsoleActiveScreenBuffer(IntPtr handle);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        static extern bool WriteConsoleOutput(
+            IntPtr hConsoleOutput,
+            CharInfo[] lpBuffer,
+            Coord dwBufferSize,
+            Coord dwBufferCoord,
+            ref SmallRect lpWriteRegion
+        );
 
         [DllImport("kernel32.dll")]
         static extern bool WriteConsoleOutputCharacter(
@@ -182,8 +199,30 @@ namespace ConsoleFpsSharp
             }
         };
 
-        [DllImport("user32.dll", SetLastError = true)]
+        [StructLayout(LayoutKind.Explicit)]
+        public struct CharUnion
+        {
+            [FieldOffset(0)] public char UnicodeChar;
+            [FieldOffset(0)] public byte AsciiChar;
+        }
 
+        [StructLayout(LayoutKind.Explicit)]
+        public struct CharInfo
+        {
+            [FieldOffset(0)] public CharUnion Char;
+            [FieldOffset(2)] public short Attributes;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct SmallRect
+        {
+            public short Left;
+            public short Top;
+            public short Right;
+            public short Bottom;
+        }
+
+        [DllImport("user32.dll", SetLastError = true)]
         public static extern short GetAsyncKeyState(int vKey);
     }
 }
